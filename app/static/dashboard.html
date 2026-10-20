@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Saathi Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&family=Rubik:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #faf6ee; --card: #fffdf8; --line: #e4d9c5; --ink: #1c2b25; --soft: #4a4f48; --muted: #6b655a;
+    --accent: #a9531a; --accent-soft: #f0e6d4; --good: #2e6b4a; --bad: #a33a2b; --dark: #1c2b25;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #141d19; --card: #1c2924; --line: #2e4038; --ink: #f2ede2; --soft: #c9d3cc; --muted: #9fb0a6;
+            --accent: #e08a3c; --accent-soft: #2e4038; --good: #7cc49a; --bad: #e8826f; --dark: #0f1613; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 "Nunito Sans", Arial, sans-serif; }
+  header { background: var(--dark); color: #faf6ee; padding: 16px 20px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  header h1 { font: 600 22px Rubik, Arial, sans-serif; margin: 0; }
+  header .who { margin-left: auto; color: #c9d3cc; font-size: 14px; }
+  .chip { background: #e08a3c; color: #1c2b25; border-radius: 999px; padding: 2px 10px; font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; }
+  main { max-width: 1120px; margin: 0 auto; padding: 20px 16px 48px; display: grid; gap: 16px; }
+  h2 { font: 600 17px Rubik, Arial, sans-serif; margin: 0 0 10px; }
+  .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; min-width: 0; }
+  .kpi .label { color: var(--muted); font-size: 13px; text-transform: uppercase; letter-spacing: .5px; font-weight: 700; }
+  .kpi .value { font: 600 26px Rubik, Arial, sans-serif; margin-top: 4px; }
+  .kpi .sub { color: var(--soft); font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; color: var(--muted); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  th, td { padding: 7px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  .badge { border-radius: 6px; padding: 1px 7px; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .done { background: color-mix(in srgb, var(--good) 18%, transparent); color: var(--good); }
+  .rejected, .undone { background: color-mix(in srgb, var(--bad) 16%, transparent); color: var(--bad); }
+  .pending_approval { background: var(--accent-soft); color: var(--accent); }
+  .muted { color: var(--muted); }
+  .empty { color: var(--muted); font-style: italic; }
+  .chart { position: relative; height: 240px; }
+  .scroll { overflow-x: auto; }
+  .notice { max-width: 520px; margin: 80px auto; text-align: center; padding: 24px; }
+  .wide { grid-column: 1 / -1; }
+  @media (max-width: 560px) { .kpi .value { font-size: 22px; } header .who { margin-left: 0; width: 100%; } }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script src="https://cdn.jsdelivr.net/npm/react@18.3.1/umd/react.production.min.js" integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/react-dom@18.3.1/umd/react-dom.production.min.js" integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/htm@3.1.1/dist/htm.umd.js" integrity="sha384-toVdrLSMaw7Y55MowcKqkmFL/Ek6Sky62NOk0b5sDDZBu2wcoPyyQUt9unDVjXhL" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js" integrity="sha384-dug+JxfBvklEQdJ4AYuBBAIScUz0bVN73xpy273gcAwHjb3qI0fXmuYNaNfdyYJG" crossorigin="anonymous"></script>
+<script>
+const { useEffect, useRef, useState } = React;
+const html = htm.bind(React.createElement);
+
+// The app (or a link) carries the token after "#", which browsers never send to servers or logs.
+(function takeToken() {
+  const m = location.hash.match(/t=([^&]+)/);
+  if (m) {
+    try { sessionStorage.setItem("saathi_token", decodeURIComponent(m[1])); } catch (e) { window.__token = decodeURIComponent(m[1]); }
+    history.replaceState(null, "", location.pathname);
+  }
+})();
+function token() { try { return sessionStorage.getItem("saathi_token") || window.__token; } catch (e) { return window.__token; } }
+
+async function api(path) {
+  const r = await fetch("/api/" + path, { headers: { Authorization: "Bearer " + (token() || "") } });
+  if (r.status === 401) throw new Error("expired");
+  if (!r.ok) throw new Error("HTTP " + r.status);
+  return r.json();
+}
+
+const rupee = (n) => "₹" + Number(n).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+const when = (iso) => new Date(iso).toLocaleString("en-IN", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" });
+const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+function Bar({ labels, values, label, suffix = "", max }) {
+  const ref = useRef(null);
+  useEffect(() => {
+    const chart = new Chart(ref.current, {
+      type: "bar",
+      data: { labels, datasets: [{ label, data: values, backgroundColor: css("--accent"), borderRadius: 6, maxBarThickness: 42 }] },
+      options: {
+        maintainAspectRatio: false, animation: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (c) => c.formattedValue + suffix } } },
+        scales: {
+          x: { ticks: { color: css("--muted") }, grid: { display: false } },
+          y: { beginAtZero: true, max, ticks: { color: css("--muted") }, grid: { color: css("--line") } },
+        },
+      },
+    });
+    return () => chart.destroy();
+  }, [JSON.stringify(labels), JSON.stringify(values)]);
+  return html`<div class="chart"><canvas ref=${ref} role="img" aria-label=${label}></canvas></div>`;
+}
+
+function Kpi({ label, value, sub }) {
+  return html`<div class="card kpi"><div class="label">${label}</div><div class="value">${value}</div>${sub && html`<div class="sub">${sub}</div>`}</div>`;
+}
+
+function Shop({ d }) {
+  const t = d.today;
+  return html`
+    <div class="grid">
+      <${Kpi} label="Today's sales" value=${rupee(t.sales)} sub=${`${t.bills} bills · cash ${rupee(t.cash)} · credit ${rupee(t.credit_sales)}`} />
+      <${Kpi} label="Payments received" value=${rupee(t.received)} sub="today" />
+      <${Kpi} label="Credit given" value=${rupee(t.credit_given)} sub="today, incl. credit bills" />
+      <${Kpi} label="Total dues" value=${rupee(t.total_dues)} sub=${`${t.customers_with_dues} customers`} />
+    </div>
+    <div class="grid">
+      <div class="card"><h2>Sales, last 7 days</h2>
+        <${Bar} labels=${d.week.map((w) => w.day)} values=${d.week.map((w) => w.sales)} label="Sales in rupees" /></div>
+      <div class="card"><h2>Highest dues</h2>
+        ${d.dues.length ? html`<table><thead><tr><th>Customer</th><th class="num">Owes</th></tr></thead><tbody>
+          ${d.dues.map((x) => html`<tr key=${x.customer}><td>${x.customer}</td><td class="num">${rupee(x.balance)}</td></tr>`)}
+        </tbody></table>` : html`<p class="empty">No pending dues.</p>`}</div>
+      <div class="card"><h2>Low stock</h2>
+        ${d.low_stock.length ? html`<table><tbody>${d.low_stock.map((p) => html`<tr key=${p.name}><td>${p.name}</td><td class="num">${p.stock} ${p.unit}</td></tr>`)}</tbody></table>`
+          : html`<p class="empty">Everything is above its reorder level.</p>`}</div>
+    </div>
+    <div class="card scroll"><h2>Recent bills</h2>
+      ${d.bills.length ? html`<table><thead><tr><th>Bill</th><th>Customer</th><th>When</th><th class="num">Total</th></tr></thead><tbody>
+        ${d.bills.map((b) => html`<tr key=${b.no}><td>#${b.no}</td><td>${b.customer || html`<span class="muted">cash</span>`}${b.on_credit ? " · credit" : ""}${b.cancelled ? html` <span class="badge rejected">cancelled</span>` : ""}</td><td>${when(b.at)}</td><td class="num">${rupee(b.total)}</td></tr>`)}
+      </tbody></table>` : html`<p class="empty">No bills yet.</p>`}</div>`;
+}
+
+function Classes({ d }) {
+  if (!d.classes.length) return html`<div class="card empty">No classes yet. Ask Saathi in the app to create one.</div>`;
+  return html`<div class="grid">${d.classes.map((c) => html`
+    <div class="card" key=${c.name}>
+      <h2>${c.name}</h2>
+      <p class="muted">${c.students} students · attendance ${c.attendance === null ? "not marked yet" : c.attendance + "%"}</p>
+      ${c.assessments.length ? html`<${Bar} labels=${c.assessments.map((a) => a.name)} values=${c.assessments.map((a) => a.average_percent)} label="Average marks in percent" suffix="%" max=${100} />`
+        : html`<p class="empty">No marks yet.</p>`}
+      <h2 style=${{ marginTop: "12px" }}>Below 75% attendance</h2>
+      ${c.low_attendance.length ? html`<table><tbody>${c.low_attendance.map((s) => html`<tr key=${s.roll}><td>${s.roll}</td><td>${s.name}</td><td class="num">${s.percent}%</td></tr>`)}</tbody></table>`
+        : html`<p class="empty">Nobody.</p>`}
+    </div>`)}</div>`;
+}
+
+function StudentView({ d }) {
+  if (!d.classes.length) return html`<div class="card empty">You are not in any class yet.</div>`;
+  return html`<div class="grid">${d.classes.map((c) => html`
+    <div class="card" key=${c.class}>
+      <h2>${c.class} · roll ${c.roll}</h2>
+      <div class="kpi"><div class="label">Attendance</div><div class="value">${c.attendance === null ? "—" : c.attendance + "%"}</div>
+        <div class="sub">${c.present} of ${c.days} classes</div></div>
+      ${c.marks.length ? html`<table style=${{ marginTop: "12px" }}><thead><tr><th>Assessment</th><th class="num">Score</th></tr></thead><tbody>
+        ${c.marks.map((m) => html`<tr key=${m.name}><td>${m.name}</td><td class="num">${m.score} / ${m.out_of}</td></tr>`)}</tbody></table>`
+        : html`<p class="empty">No marks yet.</p>`}
+    </div>`)}</div>`;
+}
+
+function Activity({ rows }) {
+  return html`<div class="card scroll"><h2>What Saathi did (agent activity)</h2>
+    ${rows.length ? html`<table><thead><tr><th>When</th><th>Action</th><th>Status</th><th>Result</th></tr></thead><tbody>
+      ${rows.map((a, i) => html`<tr key=${i}><td style=${{ whiteSpace: "nowrap" }}>${when(a.at)}</td><td>${a.tool.replaceAll("_", " ")}</td>
+        <td><span class=${"badge " + a.status}>${a.status.replace("_", " ")}</span></td><td class="muted">${a.summary}</td></tr>`)}
+    </tbody></table>` : html`<p class="empty">Nothing yet.</p>`}</div>`;
+}
+
+function App() {
+  const [me, setMe] = useState(null);
+  const [data, setData] = useState(null);
+  const [acts, setActs] = useState([]);
+  const [error, setError] = useState(token() ? null : "nolink");
+  const [at, setAt] = useState(null);
+
+  async function load() {
+    try {
+      const who = me || (await api("me"));
+      if (!me) setMe(who);
+      const path = { shopkeeper: "shop", professor: "classes", student: "student" }[who.role];
+      const [d, a] = await Promise.all([api(path), api("activity")]);
+      setData(d); setActs(a.actions); setAt(new Date()); setError(null);
+    } catch (e) { setError(e.message === "expired" ? "expired" : "network"); }
+  }
+  useEffect(() => { if (token()) { load(); const id = setInterval(load, 30000); return () => clearInterval(id); } }, [me]);
+
+  if (error === "nolink" || error === "expired")
+    return html`<div class="card notice"><h2>${error === "expired" ? "This link has expired" : "Open the dashboard from the app"}</h2>
+      <p>Log in again in the Saathi app and open the Dashboard tab.</p></div>`;
+  return html`
+    <header><h1>Saathi</h1>${me && html`<span class="chip">${me.role}</span>`}
+      <span class="who">${me ? me.name : "Loading…"}${at ? " · updated " + at.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }) : ""}${error ? " · offline, retrying" : ""}</span></header>
+    <main>
+      ${!data ? html`<p class="muted">Loading…</p>` : me.role === "shopkeeper" ? html`<${Shop} d=${data} />`
+        : me.role === "professor" ? html`<${Classes} d=${data} />` : html`<${StudentView} d=${data} />`}
+      ${data && html`<${Activity} rows=${acts} />`}
+    </main>`;
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(html`<${App} />`);
+</script>
+</body>
+</html>

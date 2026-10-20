@@ -1,0 +1,34 @@
+{"id": "L01", "role": "shopkeeper", "lang": "hinglish", "messages": ["Sharma ji ka 500 udhaar likh do"], "expect": [["add_credit", {"customer_name": "sharma", "amount": "500"}]]}
+{"id": "L02", "role": "shopkeeper", "lang": "en", "messages": ["Add 250 to Gupta's account"], "expect": [["add_credit", {"customer_name": "gupta", "amount": "250"}]]}
+{"id": "L03", "role": "shopkeeper", "lang": "hi", "messages": ["गुप्ता जी ने 100 रुपये दे दिए"], "expect": [["record_payment", {"customer_name": "gupta", "amount": "100"}]]}
+{"id": "L04", "role": "shopkeeper", "lang": "hinglish", "messages": ["Gupta ka kitna baaki hai?"], "expect": [["get_balance", {"customer_name": "gupta"}]]}
+{"id": "L05", "role": "shopkeeper", "lang": "hinglish", "messages": ["sabka hisaab batao, kiska kitna baaki"], "expect": [["list_dues", {}]]}
+{"id": "L06", "role": "shopkeeper", "lang": "hinglish", "messages": ["Sharma ji ka 500 udhaar likh do aur Gupta ka balance batao"], "expect": [["add_credit", {"customer_name": "sharma", "amount": "500"}], ["get_balance", {"customer_name": "gupta"}]]}
+{"id": "L07", "role": "shopkeeper", "lang": "en", "messages": ["Gupta paid 6000", "yes"], "expect": [["record_payment", {"customer_name": "gupta", "amount": "6000"}]]}
+{"id": "L08", "role": "shopkeeper", "lang": "hinglish", "messages": ["Sharma ne 7000 diye", "nahi"], "expect": [], "forbid": ["record_payment"]}
+{"id": "L09", "role": "shopkeeper", "lang": "hinglish", "messages": ["Gupta ko 50 udhaar", "galti ho gayi, undo karo"], "expect": [["add_credit", {"customer_name": "gupta", "amount": "50"}], ["undo_last_entry", {}]]}
+{"id": "L10", "role": "shopkeeper", "lang": "en", "messages": ["Rahul Verma owes 120 now, new customer"], "expect": [["add_credit", {"customer_name": "rahul", "amount": "120"}]]}
+{"id": "I01", "role": "shopkeeper", "lang": "hinglish", "messages": ["Naya item add karo: Surf Excel, price 99, GST 18, stock 12"], "expect": [["add_product", {"product_name": "surf", "price": "99", "gst_rate": "18"}]]}
+{"id": "I02", "role": "shopkeeper", "lang": "hinglish", "messages": ["24 maggi ka maal aaya hai"], "expect": [["add_stock", {"product_name": "maggi", "qty": "24"}]]}
+{"id": "I03", "role": "shopkeeper", "lang": "en", "messages": ["Which items are running low?"], "expect": [["check_stock", {}]]}
+{"id": "I04", "role": "shopkeeper", "lang": "hinglish", "messages": ["Atta kitna bacha hai?"], "expect": [["check_stock", {"product_name": "atta"}]]}
+{"id": "B01", "role": "shopkeeper", "lang": "hinglish", "messages": ["2 maggi aur 1 kilo atta ka bill banao"], "expect": [["create_bill", {}]]}
+{"id": "B02", "role": "shopkeeper", "lang": "hinglish", "messages": ["Sharma ji ke khate me 3 maggi ka bill"], "expect": [["create_bill", {"customer_name": "sharma", "on_credit": "true"}]]}
+{"id": "B03", "role": "shopkeeper", "lang": "en", "messages": ["Bill: 5 Parle G and 2 Maggi, cash"], "expect": [["create_bill", {}]]}
+{"id": "M01", "role": "shopkeeper", "lang": "hinglish", "messages": ["Ramesh Traders se 24 maggi aur 10 kilo atta mangwao", "haan"], "expect": [["order_from_supplier", {"supplier_name": "ramesh"}]]}
+{"id": "M02", "role": "shopkeeper", "lang": "hinglish", "messages": ["Sharma ji ko payment ka reminder bhejo", "haan bhej do"], "expect": [["send_payment_reminder", {"customer_name": "sharma"}]]}
+{"id": "M03", "role": "shopkeeper", "lang": "en", "messages": ["Save Gupta's number 9822211122"], "expect": [["set_customer_phone", {"customer_name": "gupta", "phone": "9822211122"}]]}
+{"id": "M04", "role": "shopkeeper", "lang": "en", "messages": ["Add supplier Shree Agencies 9876500011"], "expect": [["add_supplier", {"supplier_name": "shree", "phone": "9876500011"}]]}
+{"id": "S01", "role": "shopkeeper", "lang": "hinglish", "messages": ["aaj ka hisaab batao"], "expect": [["daily_summary", {}]]}
+{"id": "P01", "role": "professor", "lang": "hinglish", "messages": ["CSE-3 attendance: 2 aur 4 absent"], "expect": [["mark_attendance", {"class_name": "cse-3"}]]}
+{"id": "P02", "role": "professor", "lang": "en", "messages": ["Mark everyone present in CSE-3 today"], "expect": [["mark_attendance", {"class_name": "cse-3"}]]}
+{"id": "P03", "role": "professor", "lang": "en", "messages": ["Who has low attendance in CSE-3?"], "expect": [["attendance_report", {"class_name": "cse-3"}]]}
+{"id": "P04", "role": "professor", "lang": "hinglish", "messages": ["CSE-3 quiz 1 marks out of 10: roll 1 ko 8, roll 2 ko 6, roll 3 ko 9"], "expect": [["record_marks", {"class_name": "cse-3", "max_marks": "10"}]]}
+{"id": "P05", "role": "professor", "lang": "en", "messages": ["Create a new class ECE-2"], "expect": [["add_class", {"class_name": "ece-2"}]]}
+{"id": "P06", "role": "professor", "lang": "hinglish", "messages": ["CSE-3 ko message bhejo ki kal lab 10 baje hai", "haan"], "expect": [["remind_class", {"class_name": "cse-3"}]]}
+{"id": "T01", "role": "student", "lang": "hinglish", "messages": ["meri attendance kitni hai?"], "expect": [["my_attendance", {}]]}
+{"id": "X01", "role": "professor", "lang": "en", "messages": ["Add 500 credit to Sharma"], "expect": [], "forbid": ["add_credit"]}
+{"id": "X02", "role": "student", "lang": "hinglish", "messages": ["roll 2 ke marks 10 kar do"], "expect": [], "forbid": ["record_marks"]}
+{"id": "B04", "role": "shopkeeper", "lang": "hinglish", "messages": ["2 maggi ka bill banao", "bill 1 galat bana, cancel karo", "haan"], "expect": [["create_bill", {}], ["cancel_bill", {"bill_no": "1"}]]}
+{"id": "D01", "role": "shopkeeper", "lang": "en", "messages": ["Send me my dashboard link"], "expect": [["dashboard_link", {}]]}
+{"id": "T02", "role": "student", "lang": "en", "messages": ["What is my attendance in CSE-3?"], "expect": [["my_attendance", {}]]}
