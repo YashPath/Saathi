@@ -128,11 +128,11 @@ shot("open_app")
 
 f = fields()
 say(f"  login fields found: {len(f)}")
-if len(f) >= 3:
-    type_into(f[0], "http://10.0.2.2:8000")
-    type_into(f[1], "919800000001")
-    type_into(f[2], "123456")
-hide_keyboard()
+for i, value in enumerate(["http://10.0.2.2:8000", "919800000001", "123456"]):
+    f = fields()  # re-read: the keyboard moves the fields after each tap
+    if len(f) > i:
+        type_into(f[i], value)
+    hide_keyboard()
 shot("login_filled")
 tap("Log in", last=True)
 time.sleep(6)
