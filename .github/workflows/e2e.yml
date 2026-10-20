@@ -23,6 +23,7 @@ jobs:
     env:
       DATABASE_URL: postgresql+psycopg://saathi:saathi@localhost:5432/saathi
       GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+      LLM_MODEL: ${{ vars.LLM_MODEL || 'gemini-3.8-flash' }}  # repo variable: switch model without a commit
       DASHBOARD_SECRET: ci-only-secret-0123456789abcdef0123456789abcdef
       PUBLIC_BASE_URL: http://10.0.2.2:8000
       SEED_SHOPKEEPER_PHONE: "919800000001"

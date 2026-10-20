@@ -20,6 +20,7 @@ log = logging.getLogger(__name__)
 
 NOT_REGISTERED = "Sorry, this number is not registered with Saathi."
 FAILED = "Sorry, something went wrong and nothing was saved. Please try again."
+LIMIT = "Saathi's AI (Gemini) has used up its free limit for now, so nothing was saved. Try again later."
 
 COMMON_PROMPT = """You are Saathi, a helpful assistant in the Saathi app.
 - Reply in the user's language: English, Hindi written in Roman script, or Hinglish. Match their style.
@@ -64,11 +65,11 @@ def handle_message(session: Session, phone: str, text: str, llm: BaseChatModel |
             reply = run_agent(session, user, text, llm or get_llm())
             if cancelled:
                 reply += f"\n\n(Not saved, approval cancelled: {cancelled})"
-    except Exception:
+    except Exception as exc:
         log.exception("agent failed for user %s", user_id)
         session.rollback()  # drop half-done writes so a retry cannot double-count
         take(session)  # and the messages those writes queued
-        return FAILED
+        return LIMIT if "RESOURCE_EXHAUSTED" in str(exc) else FAILED
     session.add_all([Message(user_id=user.id, role="user", content=text),
                      Message(user_id=user.id, role="assistant", content=reply)])
     session.flush()

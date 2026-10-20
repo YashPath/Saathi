@@ -87,6 +87,12 @@ def test_llm_failure_saves_nothing(session, users):
     assert session.scalar(select(func.count()).select_from(LedgerEntry)) == 0
 
 
+def test_quota_exhausted_says_so(session, users):
+    llm = fake_llm()
+    llm._generate = lambda *a, **k: (_ for _ in ()).throw(RuntimeError("429 RESOURCE_EXHAUSTED. Quota exceeded"))
+    assert graph.handle_message(session, "911", "Gupta 100", llm) == graph.LIMIT
+
+
 def test_parallel_tool_calls_in_one_turn(session, users):
     # Gemini often returns several function calls in ONE message; LangGraph runs them in threads.
     for i in range(5):

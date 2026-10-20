@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from app.agent.graph import FAILED, handle_message
+from app.agent.graph import FAILED, LIMIT, handle_message
 from app.agent.outbox import take
 from app.config import get_settings
 from app.dashboard.api import current_user, db
@@ -65,7 +65,7 @@ def login(body: Login, session: Session = Depends(db)) -> dict:
 def run_turn(session: Session, user: User, text: str) -> dict:
     """One chat turn: the agent's reply plus whatever its tools produced, all in this one transaction."""
     reply = handle_message(session, user.phone, text)
-    extras = deliver(session, user, take(session)) if reply != FAILED else {"messages": [], "files": [], "shares": []}
+    extras = deliver(session, user, take(session)) if reply not in (FAILED, LIMIT) else {"messages": [], "files": [], "shares": []}
     waiting = session.scalar(select(PendingAction.id).where(PendingAction.user_id == user.id)) is not None
     return {"reply": reply, **extras, "quick_replies": ["Haan", "Nahi"] if waiting else []}
 
