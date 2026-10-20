@@ -12,4 +12,6 @@ def get_llm() -> BaseChatModel:
         raise ValueError(f"Unsupported LLM_PROVIDER: {s.llm_provider}")
     from langchain_google_genai import ChatGoogleGenerativeAI
 
-    return ChatGoogleGenerativeAI(model=s.llm_model, google_api_key=s.google_api_key, temperature=0)
+    return ChatGoogleGenerativeAI(model=s.llm_model, google_api_key=s.google_api_key, temperature=0,
+                                  # low thinking keeps a turn well inside the app's wait; retries ride out 503 "high demand"
+                                  thinking_level="low", max_retries=3, timeout=60)

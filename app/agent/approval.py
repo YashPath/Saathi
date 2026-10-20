@@ -55,7 +55,7 @@ def run_tool(session: Session, user_id: int, role: Role, fn: ToolFn, args: dict)
                               expires_at=now() + timedelta(minutes=ttl)))
     log_action(session, user_id, REQUEST_TOOL, {"tool": fn.__name__, "args": args}, None, status="pending_approval")
     return {"ok": True, "pending": True,
-            "message": f"Needs approval: {summary}. Reply YES to confirm or NO to cancel (valid {ttl} minutes)."}
+            "message": f"Needs approval: {summary}. Tap Haan to confirm or Nahi to cancel (valid {ttl} minutes)."}
 
 
 def classify(text: str) -> str | None:

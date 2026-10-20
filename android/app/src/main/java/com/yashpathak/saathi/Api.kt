@@ -48,7 +48,7 @@ data class InboxItem(val id: Int, val text: String?, val filename: String?)
 class Api(private val store: Store) {
     private val http = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
-        .readTimeout(90, TimeUnit.SECONDS) // the agent may call several tools before replying
+        .readTimeout(180, TimeUnit.SECONDS) // the agent may call several tools before replying
         .build()
     private val json = "application/json".toMediaType()
 
@@ -69,6 +69,9 @@ class Api(private val store: Store) {
                 }
                 obj
             }
+        } catch (e: java.net.SocketTimeoutException) {
+            // the server may still finish the request: say so, or the user repeats it and it is saved twice
+            throw ApiError("Saathi is taking too long. It may still finish; reopen the chat before sending this again.")
         } catch (e: IOException) {
             throw ApiError("Can't reach the server. Check the address and that it is running.")
         }

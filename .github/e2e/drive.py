@@ -100,7 +100,7 @@ def crashed():
     return PKG in out and "FATAL" in out
 
 
-def wait_reply(timeout=120):
+def wait_reply(timeout=200):
     time.sleep(2)
     end = time.time() + timeout
     while time.time() < end:
