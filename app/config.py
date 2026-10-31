@@ -20,7 +20,7 @@ class Settings(BaseSettings):
 
     # LLM
     llm_provider: str = "gemini"
-    llm_model: str = "gemini-3.8-flash"
+    llm_model: str = "gemini-3.5-flash-lite"
     google_api_key: str = ""
 
     # Mobile app
