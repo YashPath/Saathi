@@ -1,0 +1,16 @@
+name: List Gemini models
+
+on:
+  workflow_dispatch:
+
+jobs:
+  list:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Models this key can use
+        env:
+          KEY: ${{ secrets.GOOGLE_API_KEY }}
+        run: |
+          names=$(curl -s "https://generativelanguage.googleapis.com/v1beta/models?pageSize=200" -H "x-goog-api-key: $KEY" \
+            | python3 -c "import sys,json;print(' '.join(m['name'] for m in json.load(sys.stdin).get('models',[]) if 'generateContent' in m.get('supportedGenerationMethods',[])))")
+          echo "::notice title=models::$names"
