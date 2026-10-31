@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write  # to publish the APK as a release
+
 jobs:
   android:
     runs-on: ubuntu-24.04  # has the Android SDK preinstalled
@@ -47,6 +50,15 @@ jobs:
             android/app/build/outputs/apk/**/*.apk
             android/app/build/outputs/bundle/**/*.aab
           if-no-files-found: error
+
+      # A plain download link for phones: github.com/YashPath/Saathi/releases/latest/download/saathi.apk
+      - name: Publish APK to the "latest" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp android/app/build/outputs/apk/debug/app-debug.apk saathi.apk
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest saathi.apk --title "Saathi app (latest build)" --notes "Debug APK from ${GITHUB_SHA::7}. Open on the phone and install." --latest
 
   backend-tests:
     runs-on: ubuntu-24.04
