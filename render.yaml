@@ -1,0 +1,32 @@
+# One-click deploy on Render (free): Dashboard -> New -> Blueprint -> pick this repo.
+services:
+  - type: web
+    name: saathi
+    runtime: python
+    plan: free
+    region: singapore
+    buildCommand: pip install -r requirements.txt
+    startCommand: alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.8"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: saathi-db
+          property: connectionString
+      - key: GOOGLE_API_KEY
+        sync: false  # Render asks for it when the blueprint is created
+      - key: DASHBOARD_SECRET
+        generateValue: true
+      - key: BILLS_DIR
+        value: /tmp/bills  # shortcut: free disk is wiped on restart, so old bill PDFs vanish; add a disk to keep them
+      - key: CHROMA_DIR
+        value: /tmp/chroma
+
+databases:
+  - name: saathi-db
+    plan: free
+    region: singapore
+    databaseName: saathi
+    user: saathi

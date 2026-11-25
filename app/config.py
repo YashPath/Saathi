@@ -2,7 +2,9 @@
 
 from functools import lru_cache
 
-from pydantic import Field
+import os
+
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -52,6 +54,21 @@ class Settings(BaseSettings):
     scheduler_enabled: bool = True
     summary_hour: int = Field(default=21, ge=0, le=23)  # IST
     assignment_reminder_hour: int = Field(default=18, ge=0, le=23)  # IST, for assignments due the next day
+
+    @field_validator("database_url")
+    @classmethod
+    def _psycopg_driver(cls, v: str) -> str:
+        # hosts such as Render hand out postgres:// or postgresql:// URLs; SQLAlchemy needs the psycopg 3 driver
+        for prefix in ("postgres://", "postgresql://"):
+            if v.startswith(prefix):
+                return "postgresql+psycopg://" + v[len(prefix):]
+        return v
+
+    @field_validator("public_base_url")
+    @classmethod
+    def _render_url(cls, v: str) -> str:
+        # on Render the service's own https address is known only at runtime
+        return os.environ.get("RENDER_EXTERNAL_URL", v) if v == "http://localhost:8000" else v
 
 
 @lru_cache
